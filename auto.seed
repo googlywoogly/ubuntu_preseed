@@ -1,0 +1,200 @@
+### Pre Install Commands ###################################################
+d-i preseed/early_command string \
+umount /media || true ## Ubuntu bug #1347726
+############################################################################
+
+
+### Locale settings ########################################################
+d-i debian-installer/locale string en_US.UTF-8
+############################################################################
+
+### Keyboard configuration #################################################
+d-i console-setup/ask_detect boolean false
+d-i keyboard-configuration/xkb-keymap select us
+d-i keyboard-configuration/layout string us
+############################################################################
+
+### Network Configuration ##################################################
+d-i netcfg/choose_interface select auto
+d-i netcfg/hostname string unassigned
+############################################################################
+
+### Mirror Configuration
+d-i mirror/country string US
+d-i mirror/http/proxy string
+############################################################################
+
+### Clock and Time Zone Configuration ######################################
+d-i clock-setup/utc boolean true
+d-i time/zone string US/Eastern
+############################################################################
+
+### NTP Configuration ######################################################
+d-i clock-setup/ntp boolean true
+d-i clock-setup/ntp-server string ntp.example.com
+############################################################################
+
+### Partition Configuration ################################################
+d-i partman/unmount_active boolean true
+d-i partman-auto/disk /dev/sda1
+d-i partman-auto/disk /dev/sda2
+d-i partman-auto/method string lvm
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
+d-i partman-auto-lvm/new_vg_name string rootvg
+d-i partman-auto-lvm/guided_size string 7500
+d-i partman-auto/choose_recipe select diod
+d-i partman-auto/expert_recipe diod ::              \
+            500 500 500 ext4                        \
+            $primary{ }                             \
+            $bootable{ }                            \
+            method{ format }                        \
+            format{ }                               \
+            use_filesystem{ }                       \
+            filesystem{ ext4 }                      \
+            label{ boot }                           \
+            mountpoint{ /boot } .                   \
+#####################################################
+            7500 7500 7500 ext4                     \
+            $primary{ }                             \
+            method{ lvm }                           \
+            format{ }                               \
+            device{ /dev/sda2 }                     \
+            vg_name{ rootvg } .                     \
+#####################################################
+            1000 1 1000 ext4                        \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ var_lv }                       \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /var } .                    \
+#####################################################
+            1000 1 1000 ext4                        \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ usr_lv }                       \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /usr } .                    \
+#####################################################
+            1500 1 1500 ext4                        \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ root_lv }                      \
+            method{ format }                        \
+            format{ }                               \
+            use_filesystem{ }                       \
+            filesystem{ ext4 }                      \
+            mountpoint{ / } .                       \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ home_lv }                      \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /home } .                   \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ tmp_lv }                       \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /tmp } .                    \
+#####################################################
+            1000 1 1000 linux-swap                  \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ swap }                         \
+            method{ swap } format{ } .              \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ opt_lv }                       \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /opt } .                    \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ var_log_lv }                   \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /var/log } .                \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ var_log_tmp_lv }               \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /var/log/tmp } .            \
+#####################################################
+            100 1 100 ext4                          \
+            $lvmok{ } in_vg{ rootvg }               \
+            lv_name{ var_log_audit_lv }             \
+            method{ format } format{ }              \
+            use_filesystem{ } filesystem{ ext4 }    \
+            mountpoint{ /var/log/audit }            \
+            .
+#####################################################
+
+d-i partman/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+############################################################################
+
+### setting up root account and password ###################################
+d-i passwd/root-login boolean true
+d-i passwd/root-password-crypted password $1$huniJIlO$Aca/.Wf0I/ekCNWbwAcaO0
+############################################################################
+
+### setting up normal user account myuser ##################################
+d-i passwd/user-fullname string myuser
+d-i passwd/username string myuser
+d-i passwd/user-password-crypted password $1$0kMObkXo$9QNxBqhS5olvNGBRLa3P./
+d-i user-setup/encrypt-home boolean false        ## Don't encrypt home directory
+############################################################################
+
+### Installaton Package ####################################################
+tasksel tasksel/first multiselect server
+d-i pkgsel/include string openssh-server  ufw
+############################################################################
+
+### Enable Firewall ########################################################
+ufw ufw/enable boolean true
+############################################################################
+
+### Do not update automatically ############################################
+d-i pkgsel/update-policy select none
+############################################################################
+
+### Grub Installation ######################################################
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean true
+############################################################################
+
+### Reboot after Installation ##############################################
+d-i finish-install/reboot_in_progress note
+############################################################################
+
+### Post Installation Commands #############################################
+# motd configuration #
+d-i preseed/late_command string echo "DevOps is Amazing" >> /target/etc/motd; \
+#################################################
+
+# ssh configuration and firewall configuration for ssh # 
+sed -i "/exit 0/i  ufw allow ssh; sed -i '/ufw allow ssh/d' /etc/rc.local" /target/etc/rc.local; \
+sed -i 's/UsePAM .*/UsePAM no/' /target/etc/ssh/sshd_config; \
+sed -i 's/PasswordAuthentication .*/PasswordAuthentication no/' /target/etc/ssh/sshd_config; \
+sed -i '/PasswordAuthentication no/s/^# *//' /target/etc/ssh/sshd_config; \
+#################################################
+
+# myuser password less configuration # 
+sed -i "/ufw/i  chown -R myuser:myuser /home/myuser/.ssh; sed -i '/myuser/d' /etc/rc.local" /target/etc/rc.local; \
+mkdir -p /target/home/myuser/.ssh; \
+touch /target/home/myuser/.ssh/authorized_keys; \
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA4XvqBQqNQeHekWYLSQsbK7yceJbKk5Dn/xsOvRZ927EOi1AmfN/LM3R/Ib5QKFc7SSdmbhTVTSbVT7T2eb7tUfsrc1Wphi0H6Yx4XYooNoIf8zP/CRnKjBRPhI6AL4AirNGxseg76I7NLAAzMhmO70aZqSJ9m9/s81nvBB0Hil+bVRmfPFyOSF31YWhJD/l/XzSt1Xc+8OL955VjXO7POxvmh0wbTVCDf1RRNlXWNik2edtYAUBx77o9PBxoIrH0NhiJbnvpzMM7EPp7vwYfs2X7zc0fppeDTuLKJxORnGHqLNei8IE3A6u1e7P2EdlbLaA4tbmNglvVP/Vql7uxOw==" >> /target/home/myuser/.ssh/authorized_keys; \
+chmod 750 /target/home/myuser; \
+chmod 700 /target/home/myuser/.ssh; \
+chmod 400 /target/home/myuser/.ssh/authorized_keys;
+#################################################
